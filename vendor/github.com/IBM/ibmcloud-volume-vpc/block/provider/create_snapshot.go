@@ -18,6 +18,7 @@
 package provider
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/IBM/ibmcloud-volume-interface/lib/metrics"
@@ -43,11 +44,17 @@ func (vpcs *VPCSession) CreateSnapshot(sourceVolumeID string, snapshotParameters
 	var snapshotResult *models.Snapshot
 
 	// Step 1- validate input which are required
+	// Convert SnapshotTags (map[string]string) to []string in "key:value" format
+	var formattedUserTags []string
+	for tagKey, tagValue := range snapshotParameters.SnapshotTags {
+		formattedUserTags = append(formattedUserTags, fmt.Sprintf("%s:%s", tagKey, tagValue))
+	}
 
 	snapshotTemplate := &models.Snapshot{
 		Name:          snapshotParameters.Name,
 		SourceVolume:  &models.SourceVolume{ID: sourceVolumeID},
 		ResourceGroup: &models.ResourceGroup{ID: vpcs.Config.VPCConfig.G2ResourceGroupID},
+		UserTags:      formattedUserTags,
 	}
 
 	err = retry(vpcs.Logger, func() error {

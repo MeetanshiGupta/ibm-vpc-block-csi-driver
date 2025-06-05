@@ -267,6 +267,39 @@ func getVolumeParameters(logger *zap.Logger, req *csi.CreateVolumeRequest, confi
 	return volume, nil
 }
 
+func getSnapshotParameters(ctxLogger *zap.Logger, req *csi.CreateSnapshotRequest) (provider.SnapshotParameters, error) {
+
+    snapshotParameters := provider.SnapshotParameters{
+        Name: req.GetName(),
+    }
+
+    for key, value := range req.GetParameters() {
+        switch key {
+        case "tags":
+            if len(value) > 0 {
+                tagstr := strings.TrimSpace(value)
+                tagMap := make(provider.SnapshotTags)
+
+                tagPairs := strings.Split(tagstr, ",")
+                for _, pair := range tagPairs {
+                    kv := strings.SplitN(pair, ":", 2)
+                    if len(kv) == 2 {
+                        tagMap[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+                    } else {
+                        ctxLogger.Warn("Invalid tag format", zap.String("tag", pair))
+                    }
+                }
+
+                snapshotParameters.SnapshotTags = tagMap
+            }
+        default:
+            ctxLogger.Warn("Unrecognized parameter", zap.String("key", key), zap.String("value", value))
+        }
+    }
+
+    return snapshotParameters, nil
+}
+
 func overrideParams(logger *zap.Logger, req *csi.CreateVolumeRequest, config *config.Config, volume *provider.Volume) error {
 	var encrypt = "undef"
 	var err error

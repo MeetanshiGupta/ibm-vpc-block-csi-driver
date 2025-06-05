@@ -487,12 +487,18 @@ func (csiCS *CSIControllerServer) CreateSnapshot(ctx context.Context, req *csi.C
 		ctxLogger.Info("Snapshot with name already exist for volume", zap.Reflect("SnapshotName", snapshotName), zap.Reflect("VolumeID", sourceVolumeID))
 		return createCSISnapshotResponse(*snapshot), nil
 	}
-	snapshotParameters := provider.SnapshotParameters{}
-	snapshotParameters.Name = snapshotName
-	snapshotTags := map[string]string{
-		"name": snapshotName,
-	}
-	snapshotParameters.SnapshotTags = snapshotTags
+	// snapshotParameters := provider.SnapshotParameters{}
+	// snapshotParameters.Name = snapshotName
+	// snapshotTags := map[string]string{
+	// 	"name": snapshotName,
+	// }
+	// snapshotParameters.SnapshotTags = snapshotTags
+
+	// Get Snapshot Parameters
+    snapshotParameters, err := getSnapshotParameters(ctxLogger, req)
+    if err != nil {
+        return nil, err
+    }
 
 	snapshot, err = session.CreateSnapshot(sourceVolumeID, snapshotParameters)
 
